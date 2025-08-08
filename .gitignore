@@ -1,0 +1,19 @@
+# Visual Studio cache directory.
+.vs/
+src/.vs/
+
+# Directories used during application build.
+src/Client/bin/
+src/Client/obj/
+
+src/Server/bin/
+src/Server/obj/
+
+src/Common/bin/
+src/Common/obj/
+
+src/UnitTests/bin/
+src/UnitTests/obj/
+
+src/IntegrationTests/bin/
+src/IntegrationTests/obj/
