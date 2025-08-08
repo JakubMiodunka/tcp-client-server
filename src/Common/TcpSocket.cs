@@ -36,37 +36,9 @@ public abstract class TcpSocket : IDisposable
     protected abstract ConcurrentQueue<byte[]> SendingQueue { get; }
     protected abstract ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
 
-    public event Action<IPEndPoint>? ConnectionClosedEvent;  // Shall be invoked with IP end point of remote resource, when it closes its socket.
-    public IPEndPoint LocalEndPoint
-    {
-        get
-        {
-            IPEndPoint? remoteEndPoint = Socket.LocalEndPoint as IPEndPoint;
-
-            if (remoteEndPoint is null)
-            {
-                const string ErrorMessage = "Socket is not associated with any local IP end point:";
-                throw new InvalidOperationException(ErrorMessage);
-            }
-
-            return remoteEndPoint;
-        }
-    }
-    public IPEndPoint RemoteEndPoint
-    {
-        get
-        {
-            IPEndPoint? remoteEndPoint = Socket.RemoteEndPoint as IPEndPoint;
-
-            if (remoteEndPoint is null)
-            {
-                const string ErrorMessage = "Socket is not connected to remote resource:";
-                throw new InvalidOperationException(ErrorMessage);
-            }
-
-            return remoteEndPoint;
-        }
-    }
+    public bool IsConnectionEstablished { get; private set; }
+    public IPEndPoint? LocalEndPoint => Socket.LocalEndPoint as IPEndPoint;
+    public IPEndPoint? RemoteEndPoint => Socket.RemoteEndPoint as IPEndPoint;
     #endregion
 
     #region Instantiation
@@ -118,6 +90,8 @@ public abstract class TcpSocket : IDisposable
         _cipher = cipher;
         _cancellationTokenSourceForDataListening = new CancellationTokenSource();
         _cancellationTokenSourceForDataSending = new CancellationTokenSource();
+
+        IsConnectionEstablished = false;
     }
     #endregion
 
@@ -164,7 +138,7 @@ public abstract class TcpSocket : IDisposable
             // Receiving 0 bytes is an indicator, that remote resource closed its socket.
             if (sizeOfReceivedDataChunk == 0)
             {
-                ConnectionClosedEvent?.Invoke(RemoteEndPoint);
+                IsConnectionEstablished = false;
                 return;
             }
 
@@ -185,7 +159,7 @@ public abstract class TcpSocket : IDisposable
             receivedData.Clear();
 
             byte[] decryptedPayload = _cipher.Decrypt(encryptedPayload);
-            var socketMessage = new SocketMessage(LocalEndPoint, RemoteEndPoint, decryptedPayload);
+            var socketMessage = new SocketMessage(RemoteEndPoint, decryptedPayload);
             ReceivingQueue.Enqueue(socketMessage);
         }
     }
@@ -246,6 +220,8 @@ public abstract class TcpSocket : IDisposable
     {
         _listeningForDataTask = StartListeningForData(_cancellationTokenSourceForDataListening.Token);
         _sendingDataTask = StartSendingData(_cancellationTokenSourceForDataSending.Token);
+        
+        IsConnectionEstablished = true;
     }
 
     /// <summary>
@@ -278,8 +254,9 @@ public abstract class TcpSocket : IDisposable
             // it is recommended to call Socket.Shutdown on connected socket before disposing it (calling socket.Close()).
             Socket.Shutdown(SocketShutdown.Both);
         }
-
         Socket.Close(); // Calls Socket.Dispose() internally.
+
+        IsConnectionEstablished = false;
     }
     #endregion
 }

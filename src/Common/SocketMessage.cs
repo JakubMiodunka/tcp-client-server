@@ -7,11 +7,9 @@ namespace Common;
 /// </summary>
 /// <param name="SenderEndPoint">
 /// IP end point of message sender.
-/// </param>
-/// <param name="ReceiverEndPoint">
-/// IP end point of message receiver.
+/// If sender is unknown, this property will be set to null reference.
 /// </param>
 /// <param name="Content">
 /// Binary content of the message.
 /// </param>
-public sealed record SocketMessage(IPEndPoint SenderEndPoint, IPEndPoint ReceiverEndPoint, byte[] Content);
+public sealed record SocketMessage(IPEndPoint? SenderEndPoint, byte[] Content);
