@@ -36,7 +36,6 @@ public abstract class TcpSocket : IDisposable
     protected abstract ConcurrentQueue<byte[]> SendingQueue { get; }
     protected abstract ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
 
-    public bool IsConnectionEstablished { get; private set; }
     public IPEndPoint? LocalEndPoint => Socket.LocalEndPoint as IPEndPoint;
     public IPEndPoint? RemoteEndPoint => Socket.RemoteEndPoint as IPEndPoint;
     #endregion
@@ -90,12 +89,18 @@ public abstract class TcpSocket : IDisposable
         _cipher = cipher;
         _cancellationTokenSourceForDataListening = new CancellationTokenSource();
         _cancellationTokenSourceForDataSending = new CancellationTokenSource();
-
-        IsConnectionEstablished = false;
     }
     #endregion
 
-    #region Interactions 
+    #region Interactions
+    /// <summary>
+    /// Defines reaction on event, when connection will be closed by remote resource
+    /// </summary>
+    /// <remarks>
+    /// Shall implement simple logic ex. set a property value.
+    /// </remarks>
+    protected abstract void ReactOnRemoteConnectionClose();
+
     /// <summary>
     /// Triggers continues process of listening for new patches of data on socket.
     /// </summary>
@@ -138,7 +143,7 @@ public abstract class TcpSocket : IDisposable
             // Receiving 0 bytes is an indicator, that remote resource closed its socket.
             if (sizeOfReceivedDataChunk == 0)
             {
-                IsConnectionEstablished = false;
+                ReactOnRemoteConnectionClose();
                 return;
             }
 
@@ -220,14 +225,12 @@ public abstract class TcpSocket : IDisposable
     {
         _listeningForDataTask = StartListeningForData(_cancellationTokenSourceForDataListening.Token);
         _sendingDataTask = StartSendingData(_cancellationTokenSourceForDataSending.Token);
-        
-        IsConnectionEstablished = true;
     }
 
     /// <summary>
     /// Suppresses currently pending sending and receiving operations on socket and dispose the socket itself.
     /// </summary>
-    public void Dispose()
+    public virtual void Dispose()
     {
         if (_sendingDataTask is not null)
         {
@@ -255,8 +258,6 @@ public abstract class TcpSocket : IDisposable
             Socket.Shutdown(SocketShutdown.Both);
         }
         Socket.Close(); // Calls Socket.Dispose() internally.
-
-        IsConnectionEstablished = false;
     }
     #endregion
 }
