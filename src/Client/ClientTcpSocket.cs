@@ -27,6 +27,7 @@ public sealed class ClientSocket : TcpSocket
     protected override ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
 
     public readonly IPEndPoint TargetRemoteEndPoint;
+    public bool IsConnectionEstablished { get; private set; }
     #endregion
 
     #region Instantiation
@@ -65,10 +66,19 @@ public sealed class ClientSocket : TcpSocket
         Socket = new Socket(targetRemoteEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         SendingQueue = new ConcurrentQueue<byte[]>();
         ReceivingQueue = new ConcurrentQueue<SocketMessage>();
+        IsConnectionEstablished = false;
     }
     #endregion
 
     #region Interactions
+    /// <summary>
+    /// Defines reaction on event, when connection will be closed on server site.
+    /// </summary>
+    protected override void ReactOnRemoteConnectionClose()
+    {
+        IsConnectionEstablished = false;
+    }
+
     /// <summary>
     /// Connects client socket to server and starts data transfer.
     /// </summary>
@@ -87,6 +97,7 @@ public sealed class ClientSocket : TcpSocket
 
         Socket.Connect(TargetRemoteEndPoint);    // Throws SocketException when connection will fail.
         StartDataTransfer();
+        IsConnectionEstablished = true;
     }
 
     /// <summary>
@@ -126,6 +137,15 @@ public sealed class ClientSocket : TcpSocket
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Suppresses currently pending sending and receiving operations on socket and dispose the socket itself.
+    /// </summary>
+    public override void Dispose()
+    {
+        base.Dispose();
+        IsConnectionEstablished = false;
     }
     #endregion
 }
