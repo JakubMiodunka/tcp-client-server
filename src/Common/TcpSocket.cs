@@ -45,7 +45,7 @@ public abstract class TcpSocket : IDisposable
 
             if (remoteEndPoint is null)
             {
-                const string ErrorMessage = "Socket is not connected to remote resource:";
+                const string ErrorMessage = "Socket is not associated with any local IP end point:";
                 throw new InvalidOperationException(ErrorMessage);
             }
 
