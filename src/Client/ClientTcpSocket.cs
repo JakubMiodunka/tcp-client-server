@@ -21,18 +21,18 @@ namespace Client;
 public sealed class ClientSocket : TcpSocket
 {
     #region Properties
-    private readonly IPEndPoint _targetServerEndPoint;
-
     protected override Socket Socket { get; }
     protected override ConcurrentQueue<byte[]> SendingQueue { get; }
     protected override ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
+
+    public readonly IPEndPoint TargetRemoteEndPoint;
     #endregion
 
     #region Instantiation
     /// <summary>
     /// Initializes client TCP socket.
     /// </summary>
-    /// <param name="serverEndPoint">
+    /// <param name="targetRemoteEndPoint">
     /// End point of a server, to which client shall connect.
     /// </param>
     /// <param name="receivingBufferSize">
@@ -48,21 +48,20 @@ public sealed class ClientSocket : TcpSocket
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
-    public ClientSocket(IPEndPoint serverEndPoint, int receivingBufferSize, IProtocol protocol, ICipher cipher)
+    public ClientSocket(IPEndPoint targetRemoteEndPoint, int receivingBufferSize, IProtocol protocol, ICipher cipher)
         : base(receivingBufferSize, protocol, cipher)
     {
         #region Arguments validation
-        if (serverEndPoint is null)
+        if (targetRemoteEndPoint is null)
         {
-            string argumentName = nameof(serverEndPoint);
+            string argumentName = nameof(targetRemoteEndPoint);
             const string ErrorMessage = "Provided IP end point is a null reference:";
             throw new ArgumentNullException(argumentName, ErrorMessage);
         }
         #endregion
 
-        _targetServerEndPoint = serverEndPoint;
-
-        Socket = new Socket(serverEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        TargetRemoteEndPoint = targetRemoteEndPoint;
+        Socket = new Socket(targetRemoteEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         SendingQueue = new ConcurrentQueue<byte[]>();
         ReceivingQueue = new ConcurrentQueue<SocketMessage>();
     }
@@ -85,7 +84,7 @@ public sealed class ClientSocket : TcpSocket
         }
         #endregion
 
-        Socket.Connect(_targetServerEndPoint);    // Throws SocketException when connection will fail.
+        Socket.Connect(TargetRemoteEndPoint);    // Throws SocketException when connection will fail.
         StartDataTransfer();
     }
 
