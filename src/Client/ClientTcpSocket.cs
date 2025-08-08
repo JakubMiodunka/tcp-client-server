@@ -12,8 +12,9 @@ namespace Client;
 /// Capable to transfer encrypted data in full-duplex manner.
 /// </summary>
 /// <remarks>
-/// To get it to operational state properly, first instantiate the class member, then assign events handlers
-/// and finally call ConnectToServer() method to start data transfer.
+/// To get it to operational state properly, first instantiate the class member, then call ConnectToServer() method to start data transfer.
+/// After establishing connection methods SentData and GetReceivedData can be used respectively to send and receive data.
+/// Monitor value of IsConnectionEstablished to be aware about current state of established connection.
 /// Do not forget to dispose created instance, when it will be no longer needed.
 /// </remarks>
 /// <seealso href="https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=net-9.0"/>
