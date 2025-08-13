@@ -95,6 +95,12 @@ internal sealed class ConnectionSocket : TcpSocket
     }
 
     /// <summary>
+    /// Starts full-duplex data transfer between connection socket and client socket. 
+    /// </summary>
+    public new void StartDataTransfer() => 
+        base.StartDataTransfer();
+
+    /// <summary>
     /// Adds provided data to sending queue.
     /// </summary>
     /// <param name="data">
