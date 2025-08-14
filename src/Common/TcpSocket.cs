@@ -34,10 +34,6 @@ public abstract class TcpSocket : IDisposable
 
     protected abstract Socket Socket { get; }
     protected abstract ConcurrentQueue<byte[]> SendingQueue { get; }
-    protected abstract ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
-
-    public IPEndPoint? LocalEndPoint => Socket.LocalEndPoint as IPEndPoint;
-    public IPEndPoint? RemoteEndPoint => Socket.RemoteEndPoint as IPEndPoint;
     #endregion
 
     #region Instantiation
@@ -102,6 +98,14 @@ public abstract class TcpSocket : IDisposable
     protected abstract void ReactOnRemoteConnectionClose();
 
     /// <summary>
+    /// Defines how data received from remote resource data shall be processed.
+    /// </summary>
+    /// <param name="data">
+    /// Data received from remote resource.
+    /// </param>
+    protected abstract void ProcessReceivedData(IEnumerable<byte> data);
+
+    /// <summary>
     /// Triggers continues process of listening for new patches of data on socket.
     /// </summary>
     /// <param name="cancellationToken">
@@ -164,8 +168,7 @@ public abstract class TcpSocket : IDisposable
             receivedData.Clear();
 
             byte[] decryptedPayload = _cipher.Decrypt(encryptedPayload);
-            var socketMessage = new SocketMessage(RemoteEndPoint, decryptedPayload);
-            ReceivingQueue.Enqueue(socketMessage);
+            ProcessReceivedData(decryptedPayload);
         }
     }
 
