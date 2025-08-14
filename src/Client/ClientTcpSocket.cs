@@ -22,9 +22,10 @@ namespace Client;
 public sealed class ClientSocket : TcpSocket
 {
     #region Properties
+    private readonly ConcurrentQueue<byte[]> _receivingQueue;
+
     protected override Socket Socket { get; }
     protected override ConcurrentQueue<byte[]> SendingQueue { get; }
-    protected override ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
 
     public readonly IPEndPoint TargetRemoteEndPoint;
     public bool IsConnectionEstablished { get; private set; }
@@ -65,7 +66,7 @@ public sealed class ClientSocket : TcpSocket
         TargetRemoteEndPoint = targetRemoteEndPoint;
         Socket = new Socket(targetRemoteEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         SendingQueue = new ConcurrentQueue<byte[]>();
-        ReceivingQueue = new ConcurrentQueue<SocketMessage>();
+        _receivingQueue = new ConcurrentQueue<byte[]>();
         IsConnectionEstablished = false;
     }
     #endregion
@@ -77,6 +78,29 @@ public sealed class ClientSocket : TcpSocket
     protected override void ReactOnRemoteConnectionClose()
     {
         IsConnectionEstablished = false;
+    }
+
+    /// <summary>
+    /// Adds data received from server to receiving queue.
+    /// </summary>
+    /// <param name="data">
+    /// Data received from server site.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown, when at least one reference-type argument is a null reference.
+    /// </exception>
+    protected override void ProcessReceivedData(IEnumerable<byte> data)
+    {
+        #region Arguments validation
+        if (data is null)
+        {
+            string argumentName = nameof(data);
+            const string ErrorMessage = "Provided data is a null reference:";
+            throw new ArgumentNullException(argumentName, ErrorMessage);
+        }
+        #endregion
+
+        _receivingQueue.Enqueue(data.ToArray());
     }
 
     /// <summary>
@@ -129,11 +153,11 @@ public sealed class ClientSocket : TcpSocket
     /// <returns>
     /// First element of receiving queue, if it is not empty, null reference otherwise.
     /// </returns>
-    public SocketMessage? GetReceivedData()
+    public byte[]? GetReceivedData()
     {
-        if (ReceivingQueue.TryDequeue(out var receivedMessage))
+        if (_receivingQueue.TryDequeue(out var data))
         {
-            return receivedMessage;
+            return data;
         }
 
         return null;
