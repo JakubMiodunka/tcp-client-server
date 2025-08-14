@@ -109,7 +109,7 @@ internal sealed class ConnectionSocket : TcpSocket
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
-    public void SentData(byte[] data)
+    public void SentData(IEnumerable<byte> data)
     {
         #region Arguments validation
         if (data is null)
@@ -120,7 +120,7 @@ internal sealed class ConnectionSocket : TcpSocket
         }
         #endregion
 
-        SendingQueue.Enqueue(data);
+        SendingQueue.Enqueue(data.ToArray());
     }
 
     /// <summary>
