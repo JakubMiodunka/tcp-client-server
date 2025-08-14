@@ -1,5 +1,4 @@
-﻿using Common;
-using Common.Encryption;
+﻿using Common.Encryption;
 using Common.Protocols;
 using System.Collections.Concurrent;
 using System.Net;
@@ -14,7 +13,7 @@ namespace Server.Sockets;
 /// <remarks>
 /// To get it to operational state properly, first instantiate the class member and StartAcceptingConnections() method to start accepting new clients.
 /// After establishing connection, methods SentData and GetReceivedData can be used to send and receive data respectively.
-/// Monitor value of ClientEndPoints to be aware about pool of currently connected clients.
+/// Monitor value of ActiveConnections to be aware about pool of currently connected clients.
 /// Do not forget to dispose created instance, when it will be no longer needed.
 /// </remarks>
 /// <seealso href="https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=net-9.0"/>
@@ -27,32 +26,25 @@ public sealed class ServerSocket : IDisposable
     private const int ListeningForConnectionInterval = 200;   // Expressed in milliseconds.
     #endregion
 
+    #region Static properties
+    private static int s_nextConnectionIdentifier = 1;
+    #endregion
+
     #region Properties
     private readonly int _receivingBufferSize;
     private readonly IProtocol _protocol;
     private readonly ICipher _cipher;
     private readonly Socket _listeningSocket;
-    private readonly List<ConnectionSocket> _connectionSockets;
+    private readonly ConcurrentDictionary<ConnectionSocket, int> _connectionSockets;    // key: connection socket wrapper, value: unique connection identifier
     private readonly ConcurrentQueue<SocketMessage> _receivingQueue;
     private Task? _acceptingConnectionsTask;
     private readonly CancellationTokenSource _cancellationTokenSourceForAcceptingConnections;
 
-    public IPEndPoint[] RemoteEndPoints
-    {
-        get
-        {
-            IEnumerable<IPEndPoint> endPoints;
-
-            lock (_connectionSockets)
-            {
-                endPoints =  from socket in _connectionSockets.Select(socket => socket.RemoteEndPoint)
-                             where socket is not null
-                             select socket;
-            }
-
-            return endPoints.ToArray();
-        }
-    }
+    public int[] ActiveConnections =>
+        _connectionSockets
+        .Where(pair => pair.Key.IsConnectionEstablished)
+        .Select(pair => pair.Value)
+        .ToArray();
     #endregion
 
     #region Instantiation
@@ -114,7 +106,7 @@ public sealed class ServerSocket : IDisposable
         _protocol = protocol;
         _cipher = cipher;
         _listeningSocket = new Socket(listeningEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        _connectionSockets = new List<ConnectionSocket>();
+        _connectionSockets = new ConcurrentDictionary<ConnectionSocket, int>();
         _receivingQueue = new ConcurrentQueue<SocketMessage>();
         _acceptingConnectionsTask = null;
         _cancellationTokenSourceForAcceptingConnections = new CancellationTokenSource();
@@ -125,19 +117,27 @@ public sealed class ServerSocket : IDisposable
 
     #region Interactions
     /// <summary>
+    /// Disposed connection sockets, which data transfer was ended by the client.
+    /// </summary>
+    private void DisposeInactiveConnectionSockets()
+    {
+        List<ConnectionSocket> inactiveSockets =
+            (from socket in _connectionSockets.Keys where !socket.IsConnectionEstablished select socket).ToList();
+
+        inactiveSockets.ForEach(socket => socket.Dispose());
+        inactiveSockets.ForEach(socket => _connectionSockets.TryRemove(socket, out int _));
+    }
+
+    /// <summary>
     /// Creates new internally managed wrapper for newly accepted connection.
     /// </summary>
-    /// <remarks>
-    /// Additionally, whenever this method is being invoked, inactive connection socket wrappers are disposed.
-    /// It is simple yet effective mechanism of lazy-management of the connection pool.
-    /// </remarks>
     /// <param name="connectionSocket">
     /// Socket referring to newly accepted connection.
     /// </param>
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
-    private void PrepareWrapperForConnectionSocket(Socket connectionSocket)
+    private void CreateSocketWrapperFor(Socket connectionSocket)
     {
         #region Arguments validation
         if (connectionSocket is null)
@@ -148,16 +148,16 @@ public sealed class ServerSocket : IDisposable
         }
         #endregion
 
-        var socketWrapper = new ConnectionSocket(connectionSocket, _receivingBufferSize, _protocol, _cipher, _receivingQueue);
+        var socketWrapper = new ConnectionSocket(connectionSocket, _receivingBufferSize, _protocol, _cipher);
         
-        lock(_connectionSockets)
+        socketWrapper.DataReceivedEvent += (eventSender, data) =>
         {
-            List<ConnectionSocket> inactiveSockets = _connectionSockets.Where(socket => !socket.IsConnectionEstablished).ToList();
-            inactiveSockets.ForEach(socket => socket.Dispose());
-            inactiveSockets.ForEach(socket => _connectionSockets.Remove(socket));
-            
-            _connectionSockets.Add(socketWrapper);
-        }
+            int connectionIdentifier = _connectionSockets[eventSender];
+            var receivedMessage = new SocketMessage(connectionIdentifier, data);
+            _receivingQueue.Enqueue(receivedMessage);
+        };
+
+        _connectionSockets.TryAdd(socketWrapper, s_nextConnectionIdentifier++);
 
         socketWrapper.StartDataTransfer();
     }
@@ -165,6 +165,10 @@ public sealed class ServerSocket : IDisposable
     /// <summary>
     /// Triggers continues process of listening and accepting new connections on listening socket.
     /// </summary>
+    /// <remarks>
+    /// Additionally, each time when new connection is accepted, inactive connection socket wrappers are disposed.
+    /// It is simple yet effective mechanism of lazy-management of the connection pool.
+    /// </remarks>
     /// <param name="cancellationToken">
     /// Cancellation token, which shall be bound to launched task.
     /// </param>
@@ -187,10 +191,12 @@ public sealed class ServerSocket : IDisposable
                 continue;
             }
 
+            DisposeInactiveConnectionSockets();
+
             Socket connectionSocket = acceptNewConnectionTask.Result;
             acceptNewConnectionTask = null;
 
-            PrepareWrapperForConnectionSocket(connectionSocket);
+            CreateSocketWrapperFor(connectionSocket);
         }
     }
 
@@ -205,8 +211,8 @@ public sealed class ServerSocket : IDisposable
     /// <summary>
     /// Sends provided data to specified connection.
     /// </summary>
-    /// <param name="clientEndPoint">
-    /// End point of a client, to which provided data shall be transfered.
+    /// <param name="connectionIdentifier">
+    /// Identifier connection, to which provided data shall be sent.
     /// </param>
     /// <param name="data">
     /// Data, which shall be sent to specified client.
@@ -217,25 +223,21 @@ public sealed class ServerSocket : IDisposable
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
-    public bool SentData(IPEndPoint clientEndPoint, IEnumerable<byte> data)
+    public bool SentData(int connectionIdentifier, IEnumerable<byte> data)
     {
         #region Arguments validation
-        if (clientEndPoint is null)
+        if (data is null)
         {
-            string argumentName = nameof(clientEndPoint);
-            const string ErrorMessage = "Provided IP end point is a null reference:";
+            string argumentName = nameof(data);
+            const string ErrorMessage = "Provided data is a null reference:";
             throw new ArgumentNullException(argumentName, ErrorMessage);
         }
         #endregion
 
-        ConnectionSocket? connectionSocket;
-
-        lock (_connectionSockets)
-        {
-            // Overload of '==' operator not defined in IPEndPoint, but Equals method implements suitable end points comparison.
-            connectionSocket = _connectionSockets
-                .FirstOrDefault(socket => clientEndPoint.Equals(socket.RemoteEndPoint));
-        }
+        ConnectionSocket? connectionSocket = _connectionSockets
+            .Where(pair => pair.Value == connectionIdentifier)
+            .Select(pair => pair.Key)
+            .FirstOrDefault();
 
         connectionSocket?.SentData(data);
 
@@ -258,12 +260,11 @@ public sealed class ServerSocket : IDisposable
         return null;
     }
 
-
     /// <summary>
     /// Closes connection with specified identifier.
     /// </summary>
-    /// <param name="clientEndPoint">
-    /// End point of a client, whose connection shall be closed.
+    /// <param name="connectionIdentifier">
+    /// Identifier connection, which shall be closed.
     /// </param>
     /// <returns>
     /// True, if connection related to specified end point was closed, false otherwise.
@@ -271,25 +272,12 @@ public sealed class ServerSocket : IDisposable
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
-    public bool CloseConnection(IPEndPoint clientEndPoint)
+    public bool CloseConnection(int connectionIdentifier)
     {
-        #region Arguments validation
-        if (clientEndPoint is null)
-        {
-            string argumentName = nameof(clientEndPoint);
-            const string ErrorMessage = "Provided IP end point is a null reference:";
-            throw new ArgumentNullException(argumentName, ErrorMessage);
-        }
-        #endregion
-
-        ConnectionSocket? connectionSocket;
-
-        lock (_connectionSockets)
-        {
-            // Overload of '==' operator not defined in IPEndPoint, but Equals method implements suitable end points comparison.
-            connectionSocket = _connectionSockets
-                .FirstOrDefault(socket => clientEndPoint.Equals(socket.RemoteEndPoint));
-        }
+        ConnectionSocket? connectionSocket = _connectionSockets
+            .Where(pair => pair.Value == connectionIdentifier)
+            .Select(pair => pair.Key)
+            .FirstOrDefault();
 
         if (connectionSocket is null)
         {
@@ -297,11 +285,7 @@ public sealed class ServerSocket : IDisposable
         }
 
         connectionSocket.Dispose();
-
-        lock (_connectionSockets)
-        {
-            _connectionSockets.Remove(connectionSocket);
-        }
+        _connectionSockets.TryRemove(connectionSocket, out int _);
 
         return true;
     }
@@ -327,11 +311,8 @@ public sealed class ServerSocket : IDisposable
 
         _listeningSocket.Close();   // Calls Socket.Dispose() internally.
 
-        lock (_connectionSockets)
-        {
-            _connectionSockets.ForEach(socket => socket.Dispose());
-            _connectionSockets.Clear();
-        }
+        _connectionSockets.Keys.ToList().ForEach(socket => socket.Dispose());
+        _connectionSockets.Clear();
     }
     #endregion
 }
