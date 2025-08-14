@@ -21,9 +21,12 @@ internal sealed class ConnectionSocket : TcpSocket
     #region Properties
     protected override Socket Socket { get; }
     protected override ConcurrentQueue<byte[]> SendingQueue { get; }
-    protected override ConcurrentQueue<SocketMessage> ReceivingQueue { get; }
 
     public bool IsConnectionEstablished { get; private set; }
+    #endregion
+
+    #region Events
+    public event Action<ConnectionSocket, byte[]>? DataReceivedEvent;   // Invoked with event sender instance and data received by it.
     #endregion
 
     #region Instantiation
@@ -43,16 +46,13 @@ internal sealed class ConnectionSocket : TcpSocket
     /// <param name="cipher">
     /// Cipher, which shall be used during communication to encrypt and decrypt data. 
     /// </param>
-    /// <param name="receivingQueue">
-    /// Reference to queue, to which all received messages shall be added.
-    /// </param>
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown, when at least one argument will be considered as invalid.
     /// </exception>
-    public ConnectionSocket(Socket connectionSocket, int receivingBufferSize, IProtocol protocol, ICipher cipher, ConcurrentQueue<SocketMessage> receivingQueue)
+    public ConnectionSocket(Socket connectionSocket, int receivingBufferSize, IProtocol protocol, ICipher cipher)
         : base(receivingBufferSize, protocol, cipher)
     {
         #region Arguments validation
@@ -69,19 +69,11 @@ internal sealed class ConnectionSocket : TcpSocket
             const string ErrorMessage = "Provided socket not connected:";
             throw new ArgumentException(ErrorMessage, argumentName);
         }
-
-        if (receivingQueue is null)
-        {
-            string argumentName = nameof(receivingQueue);
-            const string ErrorMessage = "Provided queue is a null reference:";
-            throw new ArgumentNullException(argumentName, ErrorMessage);
-        }
         #endregion
 
         Socket = connectionSocket;
         IsConnectionEstablished = connectionSocket.Connected;
         SendingQueue = new ConcurrentQueue<byte[]>();
-        ReceivingQueue = receivingQueue;
     }
     #endregion
 
@@ -92,6 +84,29 @@ internal sealed class ConnectionSocket : TcpSocket
     protected override void ReactOnRemoteConnectionClose()
     {
         IsConnectionEstablished = false;
+    }
+
+    /// <summary>
+    /// Raises DataReceivedEvent.
+    /// </summary>
+    /// <param name="data">
+    /// Data received from client site.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown, when at least one reference-type argument is a null reference.
+    /// </exception>
+    protected override void ProcessReceivedData(IEnumerable<byte> data)
+    {
+        #region Arguments validation
+        if (data is null)
+        {
+            string argumentName = nameof(data);
+            const string ErrorMessage = "Provided data is a null reference:";
+            throw new ArgumentNullException(argumentName, ErrorMessage);
+        }
+        #endregion
+
+        DataReceivedEvent?.Invoke(this, data.ToArray());
     }
 
     /// <summary>
