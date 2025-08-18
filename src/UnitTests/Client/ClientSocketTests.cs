@@ -11,7 +11,7 @@ namespace UnitTests.Client;
 [TestOf(typeof(ClientSocket))]
 [NonParallelizable]
 [Author("Jakub Miodunka")]
-public class ClientTcpSocketTests
+public class ClientSocketTests
 {
     #region Default values
     private const int DefaultReceivingBufferSize = 1024;
