@@ -1,7 +1,7 @@
 ﻿using Common.Encryption;
 using Common.Protocols;
 using System.Collections.Concurrent;
-using System.Net;
+using System.Collections.ObjectModel;
 using System.Net.Sockets;
 
 namespace Common;
@@ -33,7 +33,7 @@ public abstract class TcpSocket : IDisposable
     private readonly CancellationTokenSource _cancellationTokenSourceForDataSending;
 
     protected abstract Socket Socket { get; }
-    protected abstract ConcurrentQueue<byte[]> SendingQueue { get; }
+    protected abstract ConcurrentQueue<ReadOnlyCollection<byte>> SendingQueue { get; }
     #endregion
 
     #region Instantiation
@@ -137,7 +137,7 @@ public abstract class TcpSocket : IDisposable
 
             if (!receivingTask.IsCompleted)
             {
-                await Task.Delay(ListeningForDataInterval);
+                await Task.Delay(ListeningForDataInterval, cancellationToken);
                 continue;
             }
 
@@ -151,7 +151,7 @@ public abstract class TcpSocket : IDisposable
                 return;
             }
 
-            byte[] receivedDataChunk = receivingBuffer.Take(sizeOfReceivedDataChunk).ToArray();
+            byte[] receivedDataChunk = [.. receivingBuffer.Take(sizeOfReceivedDataChunk)];
             receivedData.AddRange(receivedDataChunk);
 
             byte[] encryptedPayload;
@@ -168,7 +168,7 @@ public abstract class TcpSocket : IDisposable
             receivedData.Clear();
 
             byte[] decryptedPayload = _cipher.Decrypt(encryptedPayload);
-            ProcessReceivedData(decryptedPayload);
+            ProcessReceivedData(decryptedPayload.AsReadOnly());
         }
     }
 
@@ -197,7 +197,7 @@ public abstract class TcpSocket : IDisposable
         {
             if (sendingPacketTask is null)
             {
-                if (SendingQueue.TryDequeue(out byte[]? messageContent))
+                if (SendingQueue.TryDequeue(out ReadOnlyCollection<byte>? messageContent))
                 {
                     byte[] encryptedMessageContent = _cipher.Encrypt(messageContent);
                     byte[] packet = _protocol.PreparePacket(encryptedMessageContent);
@@ -214,7 +214,7 @@ public abstract class TcpSocket : IDisposable
                 }
             }
 
-            await Task.Delay(SendingDataInterval);
+            await Task.Delay(SendingDataInterval, cancellationToken);
         }
     }
 
