@@ -2,6 +2,7 @@
 using Common.Encryption;
 using Common.Protocols;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
 
@@ -22,10 +23,10 @@ namespace Client;
 public sealed class ClientSocket : TcpSocket
 {
     #region Properties
-    private readonly ConcurrentQueue<byte[]> _receivingQueue;
+    private readonly ConcurrentQueue<ReadOnlyCollection<byte>> _receivingQueue;
 
     protected override Socket Socket { get; }
-    protected override ConcurrentQueue<byte[]> SendingQueue { get; }
+    protected override ConcurrentQueue<ReadOnlyCollection<byte>> SendingQueue { get; }
 
     public readonly IPEndPoint TargetRemoteEndPoint;
     public bool IsConnectionEstablished { get; private set; }
@@ -65,8 +66,8 @@ public sealed class ClientSocket : TcpSocket
 
         TargetRemoteEndPoint = targetRemoteEndPoint;
         Socket = new Socket(targetRemoteEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        SendingQueue = new ConcurrentQueue<byte[]>();
-        _receivingQueue = new ConcurrentQueue<byte[]>();
+        SendingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
+        _receivingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
         IsConnectionEstablished = false;
     }
     #endregion
@@ -100,7 +101,7 @@ public sealed class ClientSocket : TcpSocket
         }
         #endregion
 
-        _receivingQueue.Enqueue(data.ToArray());
+        _receivingQueue.Enqueue(data.ToArray().AsReadOnly());
     }
 
     /// <summary>
@@ -133,7 +134,7 @@ public sealed class ClientSocket : TcpSocket
     /// <exception cref="ArgumentNullException">
     /// Thrown, when at least one reference-type argument is a null reference.
     /// </exception>
-    public void SentData(byte[] data)
+    public void SentData(IEnumerable<byte> data)
     {
         #region Arguments validation
         if (data is null)
@@ -144,7 +145,7 @@ public sealed class ClientSocket : TcpSocket
         }
         #endregion
 
-        SendingQueue.Enqueue(data);
+        SendingQueue.Enqueue(data.ToArray().AsReadOnly());
     }
 
     /// <summary>
@@ -157,7 +158,7 @@ public sealed class ClientSocket : TcpSocket
     {
         if (_receivingQueue.TryDequeue(out var data))
         {
-            return data;
+            return [.. data];
         }
 
         return null;
