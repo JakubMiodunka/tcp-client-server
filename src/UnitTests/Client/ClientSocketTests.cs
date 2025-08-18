@@ -4,7 +4,6 @@ using Common.Protocols;
 using Moq;
 using System.Net;
 
-
 namespace UnitTests.Client;
 
 [Category("UnitTest")]
