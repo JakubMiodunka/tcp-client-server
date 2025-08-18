@@ -2,6 +2,7 @@
 using Common.Encryption;
 using Common.Protocols;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Net.Sockets;
 
 
@@ -20,7 +21,7 @@ internal sealed class ConnectionSocket : TcpSocket
 {
     #region Properties
     protected override Socket Socket { get; }
-    protected override ConcurrentQueue<byte[]> SendingQueue { get; }
+    protected override ConcurrentQueue<ReadOnlyCollection<byte>> SendingQueue { get; }
 
     public bool IsConnectionEstablished { get; private set; }
     #endregion
@@ -73,7 +74,7 @@ internal sealed class ConnectionSocket : TcpSocket
 
         Socket = connectionSocket;
         IsConnectionEstablished = connectionSocket.Connected;
-        SendingQueue = new ConcurrentQueue<byte[]>();
+        SendingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
     }
     #endregion
 
@@ -135,7 +136,7 @@ internal sealed class ConnectionSocket : TcpSocket
         }
         #endregion
 
-        SendingQueue.Enqueue(data.ToArray());
+        SendingQueue.Enqueue(data.ToArray().AsReadOnly());
     }
 
     /// <summary>
