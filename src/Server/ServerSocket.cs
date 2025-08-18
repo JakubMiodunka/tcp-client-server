@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Server.Sockets;
+namespace Server;
 
 /// <summary>
 /// Wrapper for main server socket, which accepts incoming connections.
@@ -41,10 +41,9 @@ public sealed class ServerSocket : IDisposable
     private readonly CancellationTokenSource _cancellationTokenSourceForAcceptingConnections;
 
     public int[] ActiveConnections =>
-        _connectionSockets
+        [.. _connectionSockets
         .Where(pair => pair.Key.IsConnectionEstablished)
-        .Select(pair => pair.Value)
-        .ToArray();
+        .Select(pair => pair.Value)];
     #endregion
 
     #region Instantiation
@@ -122,7 +121,7 @@ public sealed class ServerSocket : IDisposable
     private void DisposeInactiveConnectionSockets()
     {
         List<ConnectionSocket> inactiveSockets =
-            (from socket in _connectionSockets.Keys where !socket.IsConnectionEstablished select socket).ToList();
+            [.. (from socket in _connectionSockets.Keys where !socket.IsConnectionEstablished select socket)];
 
         inactiveSockets.ForEach(socket => socket.Dispose());
         inactiveSockets.ForEach(socket => _connectionSockets.TryRemove(socket, out int _));
@@ -179,21 +178,21 @@ public sealed class ServerSocket : IDisposable
     {
         _listeningSocket.Listen();
 
-        Task<Socket>? acceptNewConnectionTask = null;
+        ValueTask<Socket>? acceptNewConnectionTask = null;
 
         while (_listeningSocket.IsBound && !cancellationToken.IsCancellationRequested)
         {
-            acceptNewConnectionTask ??= _listeningSocket.AcceptAsync();
+            acceptNewConnectionTask ??= _listeningSocket.AcceptAsync(cancellationToken);
 
-            if (!acceptNewConnectionTask.IsCompleted)
+            if (!acceptNewConnectionTask.Value.IsCompleted)
             {
-                await Task.Delay(ListeningForConnectionInterval);
+                await Task.Delay(ListeningForConnectionInterval, cancellationToken);
                 continue;
             }
 
             DisposeInactiveConnectionSockets();
 
-            Socket connectionSocket = acceptNewConnectionTask.Result;
+            Socket connectionSocket = acceptNewConnectionTask.Value.Result;
             acceptNewConnectionTask = null;
 
             CreateSocketWrapperFor(connectionSocket);
