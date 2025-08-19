@@ -11,9 +11,6 @@ public class SimpleSessionLayerProtocol : IProtocol
 {
     #region Properties
     public readonly int HeaderLength;
-
-    public int MaxPayloadLength =>
-        HeaderLength * byte.MaxValue;
     #endregion
 
     #region Instantiation
@@ -22,7 +19,6 @@ public class SimpleSessionLayerProtocol : IProtocol
     /// </summary>
     /// <param name="headerLength">
     /// Desired length of packet header.
-    /// Limits maximal length of packet payload to (herderLength * byte.MaxValue) bytes.
     /// </param>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown, when value of at least one argument will be considered as invalid.
@@ -68,11 +64,11 @@ public class SimpleSessionLayerProtocol : IProtocol
             throw new ArgumentNullException(argumentName, ErrorMessage);
         }
 
-        if (MaxPayloadLength < payload.Count())
+        if (HeaderLength * byte.MaxValue < payload.Count())
         {
             string argumentName = nameof(payload);
-            string errorMessage = $"Provided payload too large: {payload.Count()} bytes";
-            throw new ArgumentException(argumentName, errorMessage);
+            string errorMessage = $"Size of provided payload too large: {payload.Count()}";
+            throw new ArgumentException(errorMessage, argumentName);
         }
         #endregion
 

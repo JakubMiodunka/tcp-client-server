@@ -6,11 +6,6 @@
 public interface IProtocol
 {
     /// <summary>
-    /// Maximal size of payload, that can be contained by a single packet.
-    /// </summary>
-    int MaxPayloadLength { get; }
-    
-    /// <summary>
     /// Prepares packet containing provided payload.
     /// </summary>
     /// <param name="payload">
