@@ -27,13 +27,13 @@ public abstract class TcpSocket : IDisposable
     private readonly int _receivingBufferSize;
     private readonly IProtocol _protocol;
     private readonly ICipher _cipher;
+    private readonly ConcurrentQueue<ReadOnlyCollection<byte>> _sendingQueue;
     private Task? _listeningForDataTask;
     private readonly CancellationTokenSource _cancellationTokenSourceForDataListening;
     private Task? _sendingDataTask;
     private readonly CancellationTokenSource _cancellationTokenSourceForDataSending;
 
     protected abstract Socket Socket { get; }
-    protected abstract ConcurrentQueue<ReadOnlyCollection<byte>> SendingQueue { get; }
     #endregion
 
     #region Instantiation
@@ -83,6 +83,7 @@ public abstract class TcpSocket : IDisposable
         _receivingBufferSize = receivingBufferSize;
         _protocol = protocol;
         _cipher = cipher;
+        _sendingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
         _cancellationTokenSourceForDataListening = new CancellationTokenSource();
         _cancellationTokenSourceForDataSending = new CancellationTokenSource();
     }
@@ -197,11 +198,9 @@ public abstract class TcpSocket : IDisposable
         {
             if (sendingPacketTask is null)
             {
-                if (SendingQueue.TryDequeue(out ReadOnlyCollection<byte>? messageContent))
+                if (_sendingQueue.TryDequeue(out ReadOnlyCollection<byte>? packet))
                 {
-                    byte[] encryptedMessageContent = _cipher.Encrypt(messageContent);
-                    byte[] packet = _protocol.PreparePacket(encryptedMessageContent);
-                    sendingPacketTask = Socket.SendAsync(packet);
+                    sendingPacketTask = Socket.SendAsync(packet.ToArray());
                     continue;
                 }
             }
@@ -228,6 +227,32 @@ public abstract class TcpSocket : IDisposable
     {
         _listeningForDataTask = StartListeningForData(_cancellationTokenSourceForDataListening.Token);
         _sendingDataTask = StartSendingData(_cancellationTokenSourceForDataSending.Token);
+    }
+
+    /// <summary>
+    /// Creates packet containing provided data and adds it to sending queue.
+    /// </summary>
+    /// <param name="data">
+    /// Data, which shall be sent to remote resource.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown, when at least one reference-type argument is a null reference.
+    /// </exception>
+    public void SentData(IEnumerable<byte> data)
+    {
+        #region Arguments validation
+        if (data is null)
+        {
+            string argumentName = nameof(data);
+            const string ErrorMessage = "Provided data is a null reference:";
+            throw new ArgumentNullException(argumentName, ErrorMessage);
+        }
+        #endregion
+
+        byte[] encryptedData = _cipher.Encrypt(data);
+        byte[] packet = _protocol.PreparePacket(encryptedData);
+
+        _sendingQueue.Enqueue(packet.AsReadOnly());
     }
 
     /// <summary>

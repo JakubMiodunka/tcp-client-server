@@ -110,8 +110,8 @@ public class SocketsIntegrationTests
     {
         _server.StartAcceptingConnections();
 
-        ClientSocket clientSocket = CreateClient();
-        clientSocket.ConnectToServer();
+        ClientSocket client = CreateClient();
+        client.ConnectToServer();
         
         Assert.That(() => _server.ActiveConnections.Count(), Is.EqualTo(1).After(ConnectionStateChangeTimeout));
 
@@ -122,7 +122,27 @@ public class SocketsIntegrationTests
         int connectionIdentifier = _server.ActiveConnections.First();
         _server.SentData(connectionIdentifier, sentData);
 
-        Assert.That(() => clientSocket.GetReceivedData()?.SequenceEqual(sentData), Is.True.After(DataTransferTimeout));
+        Assert.That(() => client.GetReceivedData()?.SequenceEqual(sentData), Is.True.After(DataTransferTimeout));
+    }
+
+    [Test]
+    public void TransferTooLargeDataFromServerToClientImpossible([Values(890)] int dataLength)
+    {
+        _server.StartAcceptingConnections();
+
+        ClientSocket client = CreateClient();
+        client.ConnectToServer();
+
+        Assert.That(() => _server.ActiveConnections.Count(), Is.EqualTo(1).After(ConnectionStateChangeTimeout));
+
+        Randomizer randomizer = TestContext.CurrentContext.Random;
+        var sentData = new byte[dataLength];
+        randomizer.NextBytes(sentData);
+
+        int connectionIdentifier = _server.ActiveConnections.First();
+        TestDelegate actionUnderTest = () => _server.SentData(connectionIdentifier, sentData);
+
+        Assert.Throws<ArgumentException>(actionUnderTest);
     }
 
     [Test]
@@ -161,6 +181,25 @@ public class SocketsIntegrationTests
         client.SentData(sentData);
 
         Assert.That(() => _server.GetReceivedData()?.Content.SequenceEqual(sentData), Is.True.After(DataTransferTimeout));
+    }
+
+    [Test]
+    public void TransferTooLargeDataFromClientToServerImpossible([Values(890)] int dataLength)
+    {
+        _server.StartAcceptingConnections();
+
+        ClientSocket client = CreateClient();
+        client.ConnectToServer();
+
+        Assert.That(() => _server.ActiveConnections.Count(), Is.EqualTo(1).After(ConnectionStateChangeTimeout));
+
+        Randomizer randomizer = TestContext.CurrentContext.Random;
+        var sentData = new byte[dataLength];
+        randomizer.NextBytes(sentData);
+
+        TestDelegate actionUnderTest = () => client.SentData(sentData);
+
+        Assert.Throws<ArgumentException>(actionUnderTest);
     }
 
     [Test]

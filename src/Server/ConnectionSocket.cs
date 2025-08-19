@@ -21,7 +21,6 @@ internal sealed class ConnectionSocket : TcpSocket
 {
     #region Properties
     protected override Socket Socket { get; }
-    protected override ConcurrentQueue<ReadOnlyCollection<byte>> SendingQueue { get; }
 
     public bool IsConnectionEstablished { get; private set; }
     #endregion
@@ -74,7 +73,6 @@ internal sealed class ConnectionSocket : TcpSocket
 
         Socket = connectionSocket;
         IsConnectionEstablished = connectionSocket.Connected;
-        SendingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
     }
     #endregion
 
@@ -115,29 +113,6 @@ internal sealed class ConnectionSocket : TcpSocket
     /// </summary>
     public new void StartDataTransfer() => 
         base.StartDataTransfer();
-
-    /// <summary>
-    /// Adds provided data to sending queue.
-    /// </summary>
-    /// <param name="data">
-    /// Data, which shall be sent to client.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown, when at least one reference-type argument is a null reference.
-    /// </exception>
-    public void SentData(IEnumerable<byte> data)
-    {
-        #region Arguments validation
-        if (data is null)
-        {
-            string argumentName = nameof(data);
-            const string ErrorMessage = "Provided data is a null reference:";
-            throw new ArgumentNullException(argumentName, ErrorMessage);
-        }
-        #endregion
-
-        SendingQueue.Enqueue(data.ToArray().AsReadOnly());
-    }
 
     /// <summary>
     /// Suppresses currently pending sending and receiving operations on socket and dispose the socket itself.

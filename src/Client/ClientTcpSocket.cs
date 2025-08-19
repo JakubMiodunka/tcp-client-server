@@ -26,7 +26,6 @@ public sealed class ClientSocket : TcpSocket
     private readonly ConcurrentQueue<ReadOnlyCollection<byte>> _receivingQueue;
 
     protected override Socket Socket { get; }
-    protected override ConcurrentQueue<ReadOnlyCollection<byte>> SendingQueue { get; }
 
     public readonly IPEndPoint TargetRemoteEndPoint;
     public bool IsConnectionEstablished { get; private set; }
@@ -66,7 +65,6 @@ public sealed class ClientSocket : TcpSocket
 
         TargetRemoteEndPoint = targetRemoteEndPoint;
         Socket = new Socket(targetRemoteEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        SendingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
         _receivingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
         IsConnectionEstablished = false;
     }
@@ -123,29 +121,6 @@ public sealed class ClientSocket : TcpSocket
         Socket.Connect(TargetRemoteEndPoint);    // Throws SocketException when connection will fail.
         StartDataTransfer();
         IsConnectionEstablished = true;
-    }
-
-    /// <summary>
-    /// Adds provided data to sending queue.
-    /// </summary>
-    /// <param name="data">
-    /// Data, which shall be sent to server.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown, when at least one reference-type argument is a null reference.
-    /// </exception>
-    public void SentData(IEnumerable<byte> data)
-    {
-        #region Arguments validation
-        if (data is null)
-        {
-            string argumentName = nameof(data);
-            const string ErrorMessage = "Provided data is a null reference:";
-            throw new ArgumentNullException(argumentName, ErrorMessage);
-        }
-        #endregion
-
-        SendingQueue.Enqueue(data.ToArray().AsReadOnly());
     }
 
     /// <summary>
