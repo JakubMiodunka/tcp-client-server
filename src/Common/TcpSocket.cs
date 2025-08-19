@@ -42,7 +42,6 @@ public abstract class TcpSocket : IDisposable
     /// </summary>
     /// <param name="receivingBufferSize">
     /// Size of a buffer, used for buffering incoming data.
-    /// Determines maximal size of data chunk, which can be transfered in a single sent-receive operation.
     /// </param>
     /// <param name="protocol">
     /// Session layer protocol, which shall be used during communication.
