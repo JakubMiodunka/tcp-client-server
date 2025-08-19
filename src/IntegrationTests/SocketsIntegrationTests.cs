@@ -10,7 +10,8 @@ namespace IntegrationTests;
 
 /// <remarks>
 /// In current configuration maximal length of data, which can be transferred between client and server
-/// is 889 bytes - it's 86,8% of size of buffers used by client and server sockets.
+/// is 889 bytes. It's caused by header length of SimpleSessionLayerProtocol, which is set to 4 bytes.
+/// It limits maximal packet length to 1020 bytes - 889 bytes of payload encrypted by TeaCipher have a length of exactly 1020 bytes.
 /// </remarks>
 [Category("IntegrationTest")]
 [NonParallelizable]
