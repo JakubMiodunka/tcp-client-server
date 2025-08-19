@@ -303,7 +303,7 @@ public sealed class ServerSocket : IDisposable
         if (_acceptingConnectionsTask is not null)
         {
             _cancellationTokenSourceForAcceptingConnections.Cancel();
-            _acceptingConnectionsTask.Wait();
+            while (_acceptingConnectionsTask.IsCompleted is false) ;
 
             _acceptingConnectionsTask = null;
         }
