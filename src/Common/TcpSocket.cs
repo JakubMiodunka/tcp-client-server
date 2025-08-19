@@ -42,6 +42,7 @@ public abstract class TcpSocket : IDisposable
     /// </summary>
     /// <param name="receivingBufferSize">
     /// Size of a buffer, used for buffering incoming data.
+    /// Determines maximal size of data chunk, which can be transfered in a single sent-receive operation.
     /// </param>
     /// <param name="protocol">
     /// Session layer protocol, which shall be used during communication.
@@ -238,7 +239,7 @@ public abstract class TcpSocket : IDisposable
         if (_sendingDataTask is not null)
         {
             _cancellationTokenSourceForDataSending.Cancel();
-            _sendingDataTask.Wait();
+            while (_sendingDataTask.IsCompleted is false);
 
             _sendingDataTask = null;
         }
@@ -246,7 +247,7 @@ public abstract class TcpSocket : IDisposable
         if (_listeningForDataTask is not null)
         {
             _cancellationTokenSourceForDataListening.Cancel();
-            _listeningForDataTask.Wait();
+            while (_listeningForDataTask.IsCompleted is false);
 
             _listeningForDataTask = null;
         }
