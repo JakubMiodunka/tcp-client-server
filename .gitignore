@@ -6,6 +6,9 @@ src/.vs/
 src/Client/bin/
 src/Client/obj/
 
+src/ClientDemo/bin/
+src/ClientDemo/obj/
+
 src/Server/bin/
 src/Server/obj/
 
