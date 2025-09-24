@@ -9,6 +9,9 @@ src/Client/obj/
 src/Server/bin/
 src/Server/obj/
 
+src/ServerDemo/bin/
+src/ServerDemo/obj/
+
 src/Common/bin/
 src/Common/obj/
 
