@@ -65,9 +65,6 @@ async Task EchoIncomingMessages(ServerSocket serverSocket, CancellationToken can
     }
     #endregion
 
-    var lastActiveConnections = Array.Empty<int>();
-    var currentlyActiveConnections = Array.Empty<int>();
-
     while (!cancellationToken.IsCancellationRequested)
     {
         SocketMessage? message = serverSocket.GetReceivedData();
