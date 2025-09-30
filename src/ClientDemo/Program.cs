@@ -15,6 +15,45 @@ var cipher = new TeaCipher(encryptionKey, bitPaddingProvider);
 #endregion
 
 #region Methods
+async Task MonitorConnection(ClientSocket clientSocket, CancellationToken cancellationToken)
+{
+    #region Arguments validation
+    if (clientSocket is null)
+    {
+        string argumentName = nameof(clientSocket);
+        const string ErrorMessage = "Provided client socket a null reference:";
+        throw new ArgumentNullException(argumentName, ErrorMessage);
+    }
+    #endregion
+
+    bool lastConnectionState = false;
+    bool currentConnectionState = false;
+
+    while (!cancellationToken.IsCancellationRequested)
+    {
+        lastConnectionState = currentConnectionState;
+        currentConnectionState = clientSocket.IsConnectionEstablished;
+
+        if (lastConnectionState)
+        {
+            if (!currentConnectionState)
+            {
+                Console.WriteLine("Connection to server closed.");
+                Console.WriteLine("Press ENTER to shutdown the client.");
+            }
+        }
+        else
+        {
+            if (currentConnectionState)
+            {
+                Console.WriteLine("Connection to server established.");
+            }
+        }
+
+        await Task.Delay(200);
+    }
+}
+
 async Task NotifyAboutIncomingMessages(ClientSocket clientSocket, CancellationToken cancellationToken)
 {
     #region Arguments validation
@@ -44,42 +83,44 @@ async Task NotifyAboutIncomingMessages(ClientSocket clientSocket, CancellationTo
 #endregion
 
 #region Main
-Task? messageNotificationTask;
+var tasks = new List<Task>();
 var cancelationTokenSource = new CancellationTokenSource();
 
 Console.WriteLine("Starting the client...");
 using (var client = new ClientSocket(serverEndPoint, receivingBufferSize, protocol, cipher))
 {
-    messageNotificationTask = NotifyAboutIncomingMessages(client, cancelationTokenSource.Token);
+    Task connectionMonitoringTask = MonitorConnection(client, cancelationTokenSource.Token);
+    tasks.Add(connectionMonitoringTask);
+
+    Task messageNotificationTask = NotifyAboutIncomingMessages(client, cancelationTokenSource.Token);
+    tasks.Add(messageNotificationTask);
 
     Console.WriteLine("Connecting to server...");
     client.ConnectToServer();
-
     while (!client.IsConnectionEstablished)
     {
         Thread.Sleep(200);
     }
 
-    Console.WriteLine("Connected to server.");
-
-    while (true)
+    while (client.IsConnectionEstablished)
     {
-        string? input = Console.ReadLine();
+        string? userInput = Console.ReadLine();
 
-        if (input is not null)
+        if (userInput is not null)
         {
-            byte[] inputAsBytes = Encoding.UTF8.GetBytes(input);
-
-            if (input == "end") // To perform graceful shutdown.
+            if (userInput == "end")
             {
-                cancelationTokenSource.Cancel();
-                // TODO: Wait for messageNotificationTask to complete.
                 break;
             }
 
+            byte[] inputAsBytes = Encoding.UTF8.GetBytes(userInput);
             client.SentData(inputAsBytes);
         }
     }
+
+    Console.WriteLine("Shutting down the client...");
+    cancelationTokenSource.Cancel();
+    Task.WaitAll(tasks.ToArray());
 }
 
 Console.WriteLine("Press ENTER to continue...");
