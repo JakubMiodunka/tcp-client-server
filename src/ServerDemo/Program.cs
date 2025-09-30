@@ -32,11 +32,7 @@ async Task MonitorActiveConnections(ServerSocket serverSocket, CancellationToken
     while (!cancellationToken.IsCancellationRequested)
     {
         lastActiveConnections = currentlyActiveConnections;
-
-        lock (serverSocket)
-        {
-            currentlyActiveConnections = serverSocket.ActiveConnections;
-        }
+        currentlyActiveConnections = serverSocket.ActiveConnections;
         
         List<int> openedConnections = currentlyActiveConnections
             .Except(lastActiveConnections)
@@ -108,17 +104,17 @@ using (var server = new ServerSocket(listeningEndPoint, receivingBufferSize, pro
 
         if (input is not null)
         {
-            if (input == "end") // To perform graceful shutdown.
+            if (input == "end")
             {
-                Console.WriteLine("Shutting down the server...");
-                
-                cancelationTokenSource.Cancel();
-                Task.WaitAll(tasks.ToArray());
-
                 break;
             }
         }
     }
+
+    Console.WriteLine("Shutting down the server...");
+
+    cancelationTokenSource.Cancel();
+    Task.WaitAll(tasks.ToArray());
 }
 
 Console.WriteLine("Press ENTER to continue...");
