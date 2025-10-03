@@ -1,10 +1,7 @@
 ﻿using Common;
 using Common.Encryption;
 using Common.Protocols;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Net.Sockets;
-
 
 namespace Server;
 
@@ -20,9 +17,28 @@ namespace Server;
 internal sealed class ConnectionSocket : TcpSocket
 {
     #region Properties
+    private readonly object _connectionStatusIndicatorLock;
+    private bool _isConnectionEstablished;  // Shall only be accessed through IsConnectionEstablished property.
+
     protected override Socket Socket { get; }
 
-    public bool IsConnectionEstablished { get; private set; }
+    public bool IsConnectionEstablished
+    {
+        get
+        {
+            lock (_connectionStatusIndicatorLock)
+            {
+                return _isConnectionEstablished;
+            }
+        }
+        set
+        {
+            lock (_connectionStatusIndicatorLock)
+            {
+                _isConnectionEstablished = value;
+            }
+        }
+    }
     #endregion
 
     #region Events
@@ -72,6 +88,7 @@ internal sealed class ConnectionSocket : TcpSocket
         #endregion
 
         Socket = connectionSocket;
+        _connectionStatusIndicatorLock = new object();
         IsConnectionEstablished = connectionSocket.Connected;
     }
     #endregion
