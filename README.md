@@ -17,7 +17,7 @@ It was created for educational purposes to gain knowledge in following fields:
 
 * */doc* - Contains project documentation.
 
-* */doc/html* - Contains HTML based documentation of this project created automatically using [DoxyGen](https://www.doxygen.nl/ "DoxyGen website").
+* */doc/html* - contains the HTML-based code documentation, automatically generated using [DoxyGen](https://www.doxygen.nl/ "DoxyGen website"). View the content by opening *index.html* in Your browser of choice.
 
 * */src* - Contains project source code.
 
