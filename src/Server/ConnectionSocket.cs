@@ -1,0 +1,143 @@
+﻿using Common;
+using Common.Encryption;
+using Common.Protocols;
+using System.Net.Sockets;
+
+namespace Server;
+
+/// <summary>
+/// Socket wrapper, which handles individual connection accepted by main server socket.
+/// Capable to transfer encrypted data in full-duplex manner.
+/// </summary>
+/// <remarks>
+/// To get it to operational state properly, first instantiate the class member
+/// and call StartDataTransfer() method to start data transfer.
+/// Do not forget to dispose created instance, when it will be no longer needed.
+/// </remarks>
+internal sealed class ConnectionSocket : TcpSocket
+{
+    #region Properties
+    private readonly object _connectionStatusIndicatorLock;
+    private bool _isConnectionEstablished;  // Shall only be accessed through IsConnectionEstablished property.
+
+    protected override Socket Socket { get; }
+
+    public bool IsConnectionEstablished
+    {
+        get
+        {
+            lock (_connectionStatusIndicatorLock)
+            {
+                return _isConnectionEstablished;
+            }
+        }
+        set
+        {
+            lock (_connectionStatusIndicatorLock)
+            {
+                _isConnectionEstablished = value;
+            }
+        }
+    }
+    #endregion
+
+    #region Events
+    public event Action<ConnectionSocket, byte[]>? DataReceivedEvent;   // Invoked with event sender instance and data received by it.
+    #endregion
+
+    #region Instantiation
+    /// <summary>
+    /// Initializes connection socket wrapper.
+    /// </summary>
+    /// <param name="connectionSocket">
+    /// Socket used to handle particular client connection.
+    /// </param>
+    /// <param name="receivingBufferSize">
+    /// Size of a buffer, used for buffering data incoming from the client site.
+    /// Expressed in bytes.
+    /// </param>
+    /// <param name="protocol">
+    /// Session layer protocol, which shall be used during communication.
+    /// </param>
+    /// <param name="cipher">
+    /// Cipher, which shall be used during communication to encrypt and decrypt data. 
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown, when at least one reference-type argument is a null reference.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown, when at least one argument will be considered as invalid.
+    /// </exception>
+    public ConnectionSocket(Socket connectionSocket, int receivingBufferSize, IProtocol protocol, ICipher cipher)
+        : base(receivingBufferSize, protocol, cipher)
+    {
+        #region Arguments validation
+        if (connectionSocket is null)
+        {
+            string argumentName = nameof(connectionSocket);
+            const string ErrorMessage = "Provided socket is a null reference:";
+            throw new ArgumentNullException(argumentName, ErrorMessage);
+        }
+
+        if (!connectionSocket.Connected)
+        {
+            string argumentName = nameof(connectionSocket);
+            const string ErrorMessage = "Provided socket not connected:";
+            throw new ArgumentException(ErrorMessage, argumentName);
+        }
+        #endregion
+
+        Socket = connectionSocket;
+        _connectionStatusIndicatorLock = new object();
+        IsConnectionEstablished = connectionSocket.Connected;
+    }
+    #endregion
+
+    #region Interactions
+    /// <summary>
+    /// Defines reaction on event, when connection will be closed on client site.
+    /// </summary>
+    protected override void ReactOnRemoteConnectionClose()
+    {
+        IsConnectionEstablished = false;
+    }
+
+    /// <summary>
+    /// Raises DataReceivedEvent.
+    /// </summary>
+    /// <param name="data">
+    /// Data received from client site.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown, when at least one reference-type argument is a null reference.
+    /// </exception>
+    protected override void ProcessReceivedData(IEnumerable<byte> data)
+    {
+        #region Arguments validation
+        if (data is null)
+        {
+            string argumentName = nameof(data);
+            const string ErrorMessage = "Provided data is a null reference:";
+            throw new ArgumentNullException(argumentName, ErrorMessage);
+        }
+        #endregion
+
+        DataReceivedEvent?.Invoke(this, data.ToArray());
+    }
+
+    /// <summary>
+    /// Starts full-duplex data transfer between connection socket and client socket. 
+    /// </summary>
+    public new void StartDataTransfer() => 
+        base.StartDataTransfer();
+
+    /// <summary>
+    /// Suppresses currently pending sending and receiving operations on socket and dispose the socket itself.
+    /// </summary>
+    public override void Dispose()
+    {
+        base.Dispose();
+        IsConnectionEstablished = false;
+    }
+    #endregion
+}
