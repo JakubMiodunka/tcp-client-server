@@ -30,6 +30,12 @@ It was created for educational purposes to gain knowledge in following fields:
 
 * */src/IntegrationTests* - Source code of integration tests.
 
+## Project versioning
+
+Versioning for this project follows the established guidelines of [semantic versioning](https://en.m.wikipedia.org/wiki/Software_versioning#Semantic_versioning).
+
+Current version: 1.0.0
+
 ## Project management
 
 Project development is tracked and managed using GitHub project available under following link: [tcp-client-server](https://github.com/users/JakubMiodunka/projects/4).
