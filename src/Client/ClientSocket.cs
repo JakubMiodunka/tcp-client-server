@@ -24,11 +24,29 @@ public sealed class ClientSocket : TcpSocket
 {
     #region Properties
     private readonly ConcurrentQueue<ReadOnlyCollection<byte>> _receivingQueue;
+    private readonly object _connectionStatusIndicatorLock;
+    private bool _isConnectionEstablished;  // Shall only be accessed through IsConnectionEstablished property.
 
     protected override Socket Socket { get; }
 
     public readonly IPEndPoint TargetRemoteEndPoint;
-    public bool IsConnectionEstablished { get; private set; }
+    public bool IsConnectionEstablished
+    {
+        get
+        {
+            lock (_connectionStatusIndicatorLock)
+            {
+                return _isConnectionEstablished;
+            }
+        }
+        set
+        {
+            lock (_connectionStatusIndicatorLock)
+            {
+                _isConnectionEstablished = value;
+            }
+        }
+    }
     #endregion
 
     #region Instantiation
@@ -66,6 +84,7 @@ public sealed class ClientSocket : TcpSocket
         TargetRemoteEndPoint = targetRemoteEndPoint;
         Socket = new Socket(targetRemoteEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         _receivingQueue = new ConcurrentQueue<ReadOnlyCollection<byte>>();
+        _connectionStatusIndicatorLock = new object();
         IsConnectionEstablished = false;
     }
     #endregion
