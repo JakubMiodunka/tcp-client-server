@@ -4,18 +4,18 @@ using NUnit.Framework.Internal;
 namespace UnitTests.Common.Protocols;
 
 [Category("UnitTest")]
-[TestOf(typeof(SimpleSessionLayerProtocol))]
+[TestOf(typeof(SSLPv2))]
 [Author("Jakub Miodunka")]
-public sealed class SimpleSessionLayerProtocolTests
+public sealed class SSLPv2Tests
 {
     #region Default values
-    private const int DefaultHeaderLength = 4;  // Value by default used by tested application.
+    private const int DefaultHeaderLength = 3;
     #endregion
 
     #region Test parameters
     // Values chosen using 3-value boundary analysis.
-    private static readonly int[] s_validPayloadLength = [0, 1, 1019, 1020];
-    private static readonly int[] s_invalidPayloadLength = [1021];
+    private static readonly int[] s_validPayloadLength = [0, 1, 16_581_373, 16_581_374];
+    private static readonly int[] s_invalidPayloadLength = [16_581_375];
     #endregion
 
     #region Test cases
@@ -23,7 +23,7 @@ public sealed class SimpleSessionLayerProtocolTests
     public void InstantiationImpossibleUsingInvalidHeaderLength(
         [Values(0)] int invalidHeaderLength)
     {
-        TestDelegate actionUnderTest = () => new SimpleSessionLayerProtocol(invalidHeaderLength);
+        TestDelegate actionUnderTest = () => new SSLPv2(invalidHeaderLength);
 
         Assert.Throws<ArgumentOutOfRangeException>(actionUnderTest);
     }
@@ -32,7 +32,7 @@ public sealed class SimpleSessionLayerProtocolTests
     public void InstantiationPossibleUsingValidHeaderLength(
         [Values(1, 2)] int validHeaderLength)
     {
-        TestDelegate actionUnderTest = () => new SimpleSessionLayerProtocol(validHeaderLength);
+        TestDelegate actionUnderTest = () => new SSLPv2(validHeaderLength);
 
         Assert.DoesNotThrow(actionUnderTest);
     }
@@ -41,7 +41,7 @@ public sealed class SimpleSessionLayerProtocolTests
     public void InstanceExposesUsedHeaderLengthProperly(
         [Values(1, 2)] int validHeaderLength)
     {
-        var protocol = new SimpleSessionLayerProtocol(validHeaderLength);
+        var protocol = new SSLPv2(validHeaderLength);
 
         Assert.That(protocol.HeaderLength, Is.EqualTo(validHeaderLength));
     }
@@ -49,7 +49,7 @@ public sealed class SimpleSessionLayerProtocolTests
     [Test]
     public void PreparingPacketUsingNullReferenceAsPayloadImpossible()
     {
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
 
         TestDelegate actionUnderTest = () => protocol.PreparePacket(null!);
 
@@ -65,7 +65,7 @@ public sealed class SimpleSessionLayerProtocolTests
         var payload = new byte[invalidPayloadLength];
         randomizer.NextBytes(payload);
 
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
         TestDelegate actionUnderTest = () => protocol.PreparePacket(payload);
 
         Assert.Throws<ArgumentException>(actionUnderTest);
@@ -80,26 +80,10 @@ public sealed class SimpleSessionLayerProtocolTests
         var payload = new byte[validPayloadLength];
         randomizer.NextBytes(payload);
 
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
         TestDelegate actionUnderTest = () => protocol.PreparePacket(payload);
 
         Assert.DoesNotThrow(actionUnderTest);
-    }
-
-    [Test]
-    public void SumOfPacketHeaderIsEqualToPayloadLength(
-        [ValueSource(nameof(s_validPayloadLength))] int validPayloadLength)
-    {
-        Randomizer randomizer = TestContext.CurrentContext.Random;
-
-        var payload = new byte[validPayloadLength];
-        randomizer.NextBytes(payload);
-
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
-        byte[] packet = protocol.PreparePacket(payload);
-
-        int headerSum = packet.Take(DefaultHeaderLength).Select(Convert.ToInt32).Sum();
-        Assert.That(headerSum, Is.EqualTo(validPayloadLength));
     }
 
     [Test]
@@ -111,7 +95,7 @@ public sealed class SimpleSessionLayerProtocolTests
         var expectedPayload = new byte[validPayloadLength];
         randomizer.NextBytes(expectedPayload);
 
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
         byte[] packet = protocol.PreparePacket(expectedPayload);
         
         byte[] actualPayload = packet.Skip(DefaultHeaderLength).ToArray();
@@ -121,7 +105,7 @@ public sealed class SimpleSessionLayerProtocolTests
     [Test]
     public void ExtractingPayloadFromNullReferenceNotPossible()
     {
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
 
         TestDelegate actionUnderTest = () => protocol.ExtractPayload(null!);
 
@@ -139,7 +123,7 @@ public sealed class SimpleSessionLayerProtocolTests
         var payload = Array.Empty<byte>();
         packet.AddRange(payload);
 
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
         TestDelegate actionUnderTest = () => protocol.ExtractPayload(packet);
 
         Assert.Throws<ArgumentException>(actionUnderTest);
@@ -157,7 +141,7 @@ public sealed class SimpleSessionLayerProtocolTests
 
         var recivingBuffer = new List<byte>();
 
-        var protocol = new SimpleSessionLayerProtocol(DefaultHeaderLength);
+        var protocol = new SSLPv2(DefaultHeaderLength);
         byte[] packet = protocol.PreparePacket(expectedPayload);
         recivingBuffer.AddRange(packet);
 

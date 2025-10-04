@@ -36,7 +36,7 @@ public class SocketsIntegrationTests
     {
         const int HeaderLength = 4;
 
-        return new SimpleSessionLayerProtocol(HeaderLength);
+        return new SSLPv1(HeaderLength);
     }
 
     private static ICipher CreateCipher()

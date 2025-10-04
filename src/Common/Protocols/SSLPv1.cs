@@ -1,15 +1,18 @@
 ﻿namespace Common.Protocols;
 
 /// <summary>
-/// Handler for data manipulation related to Simple Session Layer Protocol - simple 5 layer protocol
+/// Handler for data manipulation related to Simple Session Layer Protocol version 1 - simple 5 layer protocol
 /// created by Jakub Miodunka for sake of 'chat-net' project.
 /// </summary>
 /// <remarks>
 /// Sum of bytes contained by packet header is equal to length of its payload.
+/// Currenty it is prefered to use version 2 as it is much more efficient.
 /// </remarks>
-public class SimpleSessionLayerProtocol : IProtocol
+public class SSLPv1 : IProtocol
 {
     #region Properties
+    private readonly int _maxPayloadLength;
+
     public readonly int HeaderLength;
     #endregion
 
@@ -23,7 +26,7 @@ public class SimpleSessionLayerProtocol : IProtocol
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown, when value of at least one argument will be considered as invalid.
     /// </exception>
-    public SimpleSessionLayerProtocol(int headerLength)
+    public SSLPv1(int headerLength)
     {
         #region Arguments validation
         if (headerLength < 1)
@@ -35,10 +38,49 @@ public class SimpleSessionLayerProtocol : IProtocol
         #endregion
 
         HeaderLength = headerLength;
+        _maxPayloadLength = HeaderLength * byte.MaxValue;
     }
     #endregion
 
     #region Interactions
+    /// <summary>
+    /// Determines length of payload declared by provided packet header.
+    /// </summary>
+    /// <param name="header">
+    /// Header, basing on which length of payload shall be determined.
+    /// </param>
+    /// <returns>
+    /// Payload length declared by provided packet header.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown, when at least one reference-type argument is a null reference.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown, when at least one argument will be considered as invalid.
+    /// </exception>
+    protected virtual int ComputePayloadLength(IEnumerable<byte> header)
+    {
+        #region Arguments validation
+        if (header is null)
+        {
+            string argumentName = nameof(header);
+            const string ErrorMessage = "Provided header is a null reference:";
+            throw new ArgumentNullException(argumentName, ErrorMessage);
+        }
+
+        if (header.Count() != HeaderLength)
+        {
+            string argumentName = nameof(header);
+            string errorMessage = $"Invalid size of provided header: {header.Count()}";
+            throw new ArgumentException(errorMessage, argumentName);
+        }
+        #endregion
+
+        return header
+            .Select(Convert.ToInt32)
+            .Sum();
+    }
+
     /// <summary>
     /// Prepares packet header corresponding to provided payload.
     /// </summary>
@@ -54,7 +96,7 @@ public class SimpleSessionLayerProtocol : IProtocol
     /// <exception cref="ArgumentException">
     /// Thrown, when at least one argument will be considered as invalid.
     /// </exception>
-    private byte[] PrepareHeader(IEnumerable<byte> payload)
+    protected virtual byte[] PrepareHeader(IEnumerable<byte> payload)
     {
         #region Arguments validation
         if (payload is null)
@@ -64,7 +106,7 @@ public class SimpleSessionLayerProtocol : IProtocol
             throw new ArgumentNullException(argumentName, ErrorMessage);
         }
 
-        if (HeaderLength * byte.MaxValue < payload.Count())
+        if (_maxPayloadLength < payload.Count())
         {
             string argumentName = nameof(payload);
             string errorMessage = $"Size of provided payload too large: {payload.Count()}";
@@ -72,28 +114,14 @@ public class SimpleSessionLayerProtocol : IProtocol
         }
         #endregion
 
-        var header = new List<int>();
-        int headerSum = header.Sum();   // Shall be equal to length of provided payload.
+        var header = new byte[HeaderLength];
 
-        while (headerSum != payload.Count())
+        foreach (int index in Enumerable.Range(0, HeaderLength))
         {
-            int headerSumDiviation = payload.Count() - headerSum;
+            int headerDeclaredPayloadLength = ComputePayloadLength(header);
+            int headerSumDiviation = payload.Count() - headerDeclaredPayloadLength;
 
-            if (byte.MaxValue < headerSumDiviation)
-            {
-                header.Add(byte.MaxValue);
-            }
-            else
-            {
-                header.Add(headerSumDiviation);
-            }
-
-            headerSum = header.Sum();
-        }
-
-        while (header.Count() < HeaderLength)   // Zero-padding if needed.
-        {
-            header.Add(0);
+            header[index] = byte.MaxValue < headerSumDiviation ? byte.MaxValue : Convert.ToByte(headerSumDiviation);
         }
 
         return header.Select(Convert.ToByte).ToArray();
@@ -165,7 +193,7 @@ public class SimpleSessionLayerProtocol : IProtocol
         #endregion
 
         byte[] header = packet.Take(HeaderLength).ToArray();
-        int payloadLength = header.Select(Convert.ToInt32).Sum();
+        int payloadLength = ComputePayloadLength(header);
 
         if (packet.Count() - HeaderLength < payloadLength)
         {
