@@ -1,8 +1,8 @@
-﻿using TcpClientServer.Common.Encryption;
-using TcpClientServer.Common.Protocols;
-using Moq;
-using Server;
+﻿using Moq;
 using System.Net;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
+using TcpClientServer.Server;
 
 namespace TcpClientServer.UnitTests.Server;
 

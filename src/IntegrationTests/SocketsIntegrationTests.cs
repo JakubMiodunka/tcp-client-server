@@ -3,7 +3,7 @@ using TcpClientServer.Common.Encryption;
 using TcpClientServer.Common.Padding;
 using TcpClientServer.Common.Protocols;
 using NUnit.Framework.Internal;
-using Server;
+using TcpClientServer.Server;
 using System.Net;
 
 namespace TcpClientServer.IntegrationTests;
