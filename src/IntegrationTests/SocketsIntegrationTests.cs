@@ -10,8 +10,8 @@ namespace IntegrationTests;
 
 /// <remarks>
 /// In current configuration maximal length of data, which can be transferred between client and server
-/// is 889 bytes. It's caused by header length of SimpleSessionLayerProtocol, which is set to 4 bytes.
-/// It limits maximal packet length to 1020 bytes - 889 bytes of payload encrypted by TeaCipher have a length of exactly 1020 bytes.
+/// is 56897 bytes. It's caused by header length of SSLPv2, which is set to 2 bytes.
+/// It limits maximal packet length to 65024 bytes - 56897 bytes of payload encrypted by TeaCipher have a length of exactly 65024 bytes.
 /// </remarks>
 [Category("IntegrationTest")]
 [NonParallelizable]
@@ -34,9 +34,9 @@ public class SocketsIntegrationTests
     #region Static methods
     private static IProtocol CreateProtocol()
     {
-        const int HeaderLength = 4;
+        const int HeaderLength = 2;
 
-        return new SSLPv1(HeaderLength);
+        return new SSLPv2(HeaderLength);
     }
 
     private static ICipher CreateCipher()
@@ -106,7 +106,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void ServerTransfersDataToClient([Values(1, 10, 889)] int dataLength)
+    public void ServerTransfersDataToClient([Values(1, 10, 56_896)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
@@ -126,7 +126,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void TransferTooLargeDataFromServerToClientImpossible([Values(890)] int dataLength)
+    public void TransferTooLargeDataFromServerToClientImpossible([Values(56_897)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
@@ -165,7 +165,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void ClientTransfersDataToServer([Values(1, 10, 889)] int dataLength)
+    public void ClientTransfersDataToServer([Values(1, 10, 56_896)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
@@ -184,7 +184,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void TransferTooLargeDataFromClientToServerImpossible([Values(890)] int dataLength)
+    public void TransferTooLargeDataFromClientToServerImpossible([Values(56_897)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
