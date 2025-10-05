@@ -1,4 +1,4 @@
-# Simple Session Layer Protocol
+# Simple Session Layer Protocol version 1
 
 ## Overview
 
@@ -16,7 +16,7 @@ Patch of data (packet payload) sent through the socket is preceded by fixed leng
 
 **Example 2:** Lest's assume, that header length is equal to three bytes and recipient received  following sequence of bytes: [0, 0, 5, 1, 2] (decimal notation). Sequence can be spited into header part, which are first 3 bytes [0, 0, 5] and payload part [1, 2], which proceeds the header. Sum of bytes creating a header is equal to 5, but payload consists of only 2 bytes, which means that recipient received partial packet and needs to wait for missing 3 bytes.
 
-**Example 2:** Lest's assume, that header length is equal to three bytes and recipient received  following sequence of bytes: [0 0 3 1 2 3] (decimal notation). Sequence can be spited into header part, which are first 3 bytes [0 0 3] and payload part [1 2 3], which proceeds the header. Sum of bytes creating a header is equal to 3 and payload consists of only 3 bytes, which means that packet was fully received. Recipient can process int further.
+**Example 2:** Lest's assume, that header length is equal to three bytes and recipient received  following sequence of bytes: [0 0 3 1 2 3] (decimal notation). Sequence can be spited into header part, which are first 3 bytes [0 0 3] and payload part [1 2 3], which proceeds the header. Sum of bytes creating a header is equal to 3 and payload consists of only 3 bytes, which means that packet was fully received. Recipient can process it further.
 
 ## Authors
 
