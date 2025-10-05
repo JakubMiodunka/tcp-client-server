@@ -1,4 +1,4 @@
-﻿namespace Common;
+﻿namespace TcpClientServer.Common;
 
 /// <summary>
 /// Set of utilities related to bitwise operations.

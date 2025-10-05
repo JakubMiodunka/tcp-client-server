@@ -1,12 +1,12 @@
-﻿using Client;
-using Common.Encryption;
-using Common.Padding;
-using Common.Protocols;
+﻿using TcpClientServer.Client;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Padding;
+using TcpClientServer.Common.Protocols;
 using NUnit.Framework.Internal;
 using Server;
 using System.Net;
 
-namespace IntegrationTests;
+namespace TcpClientServer.IntegrationTests;
 
 /// <remarks>
 /// In current configuration maximal length of data, which can be transferred between client and server

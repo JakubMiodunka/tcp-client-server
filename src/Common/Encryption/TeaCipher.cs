@@ -1,6 +1,6 @@
-﻿using Common.Padding;
+﻿using TcpClientServer.Common.Padding;
 
-namespace Common.Encryption;
+namespace TcpClientServer.Common.Encryption;
 
 /// <summary>
 /// Cipher utilizing TEA (Tiny Encryption Algorithm) to encrypt and decrypt data.

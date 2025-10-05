@@ -1,7 +1,7 @@
-﻿using Common.Protocols;
+﻿using TcpClientServer.Common.Protocols;
 using NUnit.Framework.Internal;
 
-namespace UnitTests.Common.Protocols;
+namespace TcpClientServer.UnitTests.Common.Protocols;
 
 [Category("UnitTest")]
 [TestOf(typeof(SSLPv1))]

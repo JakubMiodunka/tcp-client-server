@@ -1,10 +1,10 @@
-﻿using Common.Encryption;
-using Common.Protocols;
+﻿using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Server;
+namespace TcpClientServer.Server;
 
 /// <summary>
 /// Wrapper for main server socket, which accepts incoming connections.

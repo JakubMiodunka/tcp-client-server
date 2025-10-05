@@ -1,10 +1,10 @@
-﻿using Common.Encryption;
-using Common.Protocols;
+﻿using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net.Sockets;
 
-namespace Common;
+namespace TcpClientServer.Common;
 
 /// <summary>
 /// Implementation of TCP socket, capable to transfer encrypted data in full-duplex manner

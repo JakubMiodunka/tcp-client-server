@@ -1,4 +1,4 @@
-﻿namespace Common.Protocols;
+﻿namespace TcpClientServer.Common.Protocols;
 
 /// <summary>
 /// Handler for data manipulation related to Simple Session Layer Protocol version 1 - simple 5 layer protocol

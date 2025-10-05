@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace Common.Protocols;
+namespace TcpClientServer.Common.Protocols;
 
 /// <summary>
 /// Handler for data manipulation related to Simple Session Layer Protocol version 2.

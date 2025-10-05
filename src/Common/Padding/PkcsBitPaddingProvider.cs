@@ -1,4 +1,4 @@
-﻿namespace Common.Padding;
+﻿namespace TcpClientServer.Common.Padding;
 
 /// <summary>
 /// Bit padding provider utilizing PKCS algorithm.

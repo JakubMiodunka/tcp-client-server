@@ -1,9 +1,9 @@
-﻿using Common.Encryption;
-using Common.Padding;
+﻿using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Padding;
 using Moq;
 using NUnit.Framework.Internal;
 
-namespace UnitTests.Common.Ciphers;
+namespace TcpClientServer.UnitTests.Common.Ciphers;
 
 [Category("UnitTest")]
 [TestOf(typeof(TeaCipher))]

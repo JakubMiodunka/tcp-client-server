@@ -1,4 +1,4 @@
-﻿namespace Common.Padding;
+﻿namespace TcpClientServer.Common.Padding;
 
 /// <summary>
 /// Shall be implemented by all classes, which implements a bit padding.

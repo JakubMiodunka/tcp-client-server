@@ -1,7 +1,7 @@
-﻿using Client;
-using Common.Encryption;
-using Common.Padding;
-using Common.Protocols;
+﻿using TcpClientServer.Client;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Padding;
+using TcpClientServer.Common.Protocols;
 using System.Net;
 using System.Text;
 
