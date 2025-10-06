@@ -1,17 +1,15 @@
-﻿using TcpClientServer.Client;
-using TcpClientServer.Common.Encryption;
-using TcpClientServer.Common.Padding;
-using TcpClientServer.Common.Protocols;
-using NUnit.Framework.Internal;
-using TcpClientServer.Server;
+﻿using NUnit.Framework.Internal;
 using System.Net;
+using TcpClientServer.Client;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
+using TcpClientServer.Server;
 
 namespace TcpClientServer.IntegrationTests;
 
 /// <remarks>
 /// In current configuration maximal length of data, which can be transferred between client and server
-/// is 56897 bytes. It's caused by header length of SSLPv2, which is set to 2 bytes.
-/// It limits maximal packet length to 65024 bytes - 56897 bytes of payload encrypted by TeaCipher have a length of exactly 65024 bytes.
+/// is 65024 bytes. It's caused by header length of SSLPv2, which is set to 2 bytes.
 /// </remarks>
 [Category("IntegrationTest")]
 [NonParallelizable]
@@ -39,13 +37,8 @@ public class SocketsIntegrationTests
         return new SSLPv2(HeaderLength);
     }
 
-    private static ICipher CreateCipher()
-    {
-        var bitPaddingprovider = new PkcsBitPaddingProvider(TeaCipher.DataBlockSize);
-        var encryptionKey = new byte[16] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-
-        return new TeaCipher(encryptionKey, bitPaddingprovider);
-    }
+    private static ICipher CreateCipher() =>
+        new TransparentCipher();
 
     private static ServerSocket CreateServer()
     {
@@ -106,7 +99,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void ServerTransfersDataToClient([Values(1, 10, 56_896)] int dataLength)
+    public void ServerTransfersDataToClient([Values(1, 10, 65_024)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
@@ -126,7 +119,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void TransferTooLargeDataFromServerToClientImpossible([Values(56_897)] int dataLength)
+    public void TransferTooLargeDataFromServerToClientImpossible([Values(65_025)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
@@ -165,7 +158,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void ClientTransfersDataToServer([Values(1, 10, 56_896)] int dataLength)
+    public void ClientTransfersDataToServer([Values(1, 10, 65_024)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
@@ -184,7 +177,7 @@ public class SocketsIntegrationTests
     }
 
     [Test]
-    public void TransferTooLargeDataFromClientToServerImpossible([Values(56_897)] int dataLength)
+    public void TransferTooLargeDataFromClientToServerImpossible([Values(65_025)] int dataLength)
     {
         _server.StartAcceptingConnections();
 
