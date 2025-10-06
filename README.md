@@ -37,7 +37,7 @@ It was created for educational purposes to gain knowledge in following fields:
 
 Versioning for this project follows the established guidelines of [semantic versioning](https://en.m.wikipedia.org/wiki/Software_versioning#Semantic_versioning "Wikipedia article").
 
-Current version: 1.0.0
+Current version: 1.1.0
 
 ## Project management
 
