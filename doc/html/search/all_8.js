@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['reactonremoteconnectionclose_0',['ReactOnRemoteConnectionClose',['../class_client_1_1_client_socket.html#a117c5f1f3207b01e892b0aef6ac78fb0',1,'Client.ClientSocket.ReactOnRemoteConnectionClose()'],['../class_common_1_1_tcp_socket.html#a9aa7d3cee8188d419957c3a049bf4894',1,'Common.TcpSocket.ReactOnRemoteConnectionClose()']]],
-  ['removebitpadding_1',['RemoveBitPadding',['../interface_common_1_1_padding_1_1_i_bit_padding_provider.html#affefb70c415047e530cec9a870065789',1,'Common.Padding.IBitPaddingProvider.RemoveBitPadding()'],['../class_common_1_1_padding_1_1_pkcs_bit_padding_provider.html#a4d4c2538c2a79c13578f37271c2b065c',1,'Common.Padding.PkcsBitPaddingProvider.RemoveBitPadding()']]]
+  ['reactonremoteconnectionclose_0',['ReactOnRemoteConnectionClose',['../class_tcp_client_server_1_1_client_1_1_client_socket.html#aa4ab9a42d1a7dbff9cd8c7a9280cfbc1',1,'TcpClientServer.Client.ClientSocket.ReactOnRemoteConnectionClose()'],['../class_tcp_client_server_1_1_common_1_1_tcp_socket.html#acf7c67b20b0f3fbf342e1bc8ad164ac0',1,'TcpClientServer.Common.TcpSocket.ReactOnRemoteConnectionClose()']]],
+  ['removebitpadding_1',['RemoveBitPadding',['../interface_tcp_client_server_1_1_common_1_1_padding_1_1_i_bit_padding_provider.html#a2feec3d1d2cf1d0a48cf12af68b7cfb5',1,'TcpClientServer.Common.Padding.IBitPaddingProvider.RemoveBitPadding()'],['../class_tcp_client_server_1_1_common_1_1_padding_1_1_pkcs_bit_padding_provider.html#a72f26b873001727304cf5e97de3f9ac2',1,'TcpClientServer.Common.Padding.PkcsBitPaddingProvider.RemoveBitPadding()']]]
 ];
