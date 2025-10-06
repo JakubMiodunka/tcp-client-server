@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace Server;
+namespace TcpClientServer.Server;
 
 /// <summary>
 /// Model of message, which is transfered via socket connection.

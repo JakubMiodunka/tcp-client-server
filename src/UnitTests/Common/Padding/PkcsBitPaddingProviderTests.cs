@@ -1,7 +1,7 @@
-﻿using Common.Padding;
+﻿using TcpClientServer.Common.Padding;
 using NUnit.Framework.Internal;
 
-namespace UnitTests.Common.Padding;
+namespace TcpClientServer.UnitTests.Common.Padding;
 
 [Category("UnitTest")]
 [TestOf(typeof(PkcsBitPaddingProvider))]

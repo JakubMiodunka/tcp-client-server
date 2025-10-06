@@ -10,7 +10,8 @@ Finally [TEA algorithm](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm 
 
 TEA algorithm is operating on fixed-length data blocks, so additionally some sort of padding function was required - [PKCS algorithm](https://www.ibm.com/docs/en/zos/2.4.0?topic=rules-pkcs-padding-method "IBM documentation") was introduced. It was not embedded in communication cipher, but implemented as separate entity, so it can be used also for other purposes if necessary or easily change for other padding method.
 
-To reliably handle communication at the [session (5th) layer](https://en.wikipedia.org/wiki/Session_layer "Wikipedia article") of the [OSI model](https://en.wikipedia.org/wiki/OSI_model "Wikipedia article") and ensure a full message has been transferred, we require a mechanism to delimit data packets. For sake of this purpose Simple Session Layer Protocol (SSLP) was invented - its description is available in */doc/SSLP.md* file.
+To reliably handle communication at the [session (5th) layer](https://en.wikipedia.org/wiki/Session_layer "Wikipedia article") of the [OSI model](https://en.wikipedia.org/wiki/OSI_model "Wikipedia article") and ensure a full message has been transferred, we require a mechanism to delimit data packets. For sake of this purpose Simple Session Layer Protocol (SSLP) was invented - its description is available in
+*/doc/SSLPv1.md* and */doc/SSLPv2.md* files, depending on protocol version.
 
 ## Impact on maximal size of single message
 

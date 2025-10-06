@@ -1,4 +1,4 @@
-﻿namespace Common.Encryption;
+﻿namespace TcpClientServer.Common.Encryption;
 
 /// <summary>
 /// Shall be implemented by every cipher.

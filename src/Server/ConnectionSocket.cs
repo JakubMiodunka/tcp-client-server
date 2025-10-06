@@ -1,9 +1,9 @@
-﻿using Common;
-using Common.Encryption;
-using Common.Protocols;
+﻿using TcpClientServer.Common;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
 using System.Net.Sockets;
 
-namespace Server;
+namespace TcpClientServer.Server;
 
 /// <summary>
 /// Socket wrapper, which handles individual connection accepted by main server socket.

@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['clientsocket_0',['ClientSocket',['../class_client_1_1_client_socket.html#a33bf25eb593485fa36730e3236e7bc75',1,'Client::ClientSocket']]],
-  ['closeconnection_1',['CloseConnection',['../class_server_1_1_server_socket.html#a736c2181c15d6bbd40f231e6292909b1',1,'Server::ServerSocket']]],
-  ['connecttoserver_2',['ConnectToServer',['../class_client_1_1_client_socket.html#ac862b237df2df54d1a88a3c47e0ef438',1,'Client::ClientSocket']]]
+  ['clientsocket_0',['ClientSocket',['../class_tcp_client_server_1_1_client_1_1_client_socket.html#aa01df4a649bd99c13c98fa0f42b1d1e1',1,'TcpClientServer::Client::ClientSocket']]],
+  ['closeconnection_1',['CloseConnection',['../class_tcp_client_server_1_1_server_1_1_server_socket.html#a5c3238b76884a566b136333c168b7257',1,'TcpClientServer::Server::ServerSocket']]],
+  ['computepayloadlength_2',['ComputePayloadLength',['../class_tcp_client_server_1_1_common_1_1_protocols_1_1_s_s_l_pv1.html#a6bcc4ff4e8bb2f2c0524ea91525b024e',1,'TcpClientServer.Common.Protocols.SSLPv1.ComputePayloadLength()'],['../class_tcp_client_server_1_1_common_1_1_protocols_1_1_s_s_l_pv2.html#abc4106724571e0b25d70a3b71e05bdbc',1,'TcpClientServer.Common.Protocols.SSLPv2.ComputePayloadLength()']]],
+  ['connecttoserver_3',['ConnectToServer',['../class_tcp_client_server_1_1_client_1_1_client_socket.html#a261a7ed6b6b2bd7b610a85938b70a66e',1,'TcpClientServer::Client::ClientSocket']]]
 ];

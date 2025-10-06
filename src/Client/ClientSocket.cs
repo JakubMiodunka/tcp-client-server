@@ -1,12 +1,12 @@
-﻿using Common;
-using Common.Encryption;
-using Common.Protocols;
+﻿using TcpClientServer.Common;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Client;
+namespace TcpClientServer.Client;
 
 /// <summary>
 /// Socket wrapper, which serves as a client in TCP client-server architecture.

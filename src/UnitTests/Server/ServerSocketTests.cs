@@ -1,10 +1,10 @@
-﻿using Common.Encryption;
-using Common.Protocols;
-using Moq;
-using Server;
+﻿using Moq;
 using System.Net;
+using TcpClientServer.Common.Encryption;
+using TcpClientServer.Common.Protocols;
+using TcpClientServer.Server;
 
-namespace UnitTests.Server;
+namespace TcpClientServer.UnitTests.Server;
 
 [Category("UnitTest")]
 [TestOf(typeof(ServerSocket))]

@@ -1,4 +1,4 @@
-﻿namespace Common.Protocols;
+﻿namespace TcpClientServer.Common.Protocols;
 
 /// <summary>
 /// Shall be implemented by every session layer protocol handler.
